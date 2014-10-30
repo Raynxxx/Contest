@@ -1,4 +1,4 @@
 Contest
 =======
 
-ACMICPC Contest
+ACM ICPC Contest
