@@ -1,205 +1,171 @@
-#pragma comment( linker, "/STACK:1024000000,1024000000")
-#include<stdio.h>
-#include<string.h>
-#include<queue>
+/*
+** HDU 4787 GRE Words Revenge
+** Created by Rayn @@ 2014/10/28
+*/
+#include <map>
+#include <cmath>
+#include <queue>
+#include <cstdio>
+#include <vector>
+#include <string>
+#include <cstring>
+#include <iostream>
+#include <algorithm>
+
 using namespace std;
+typedef long long Long;
+const int Limit = 2000;
+const int MAXN = 5000010;
+const int MaxNode = 100010 << 2;
+const int CharSet = 2;
 
-#define maxnode 511111
-#define sigma_size 2
-
-struct Trie{
-	int ch[maxnode][sigma_size];
-	bool val[maxnode];
-	int f[maxnode];
+class AC_Automaton {
+public:
+	int ch[MaxNode][CharSet];
+	int fail[MaxNode];
+	bool val[MaxNode];
 	int sz;
-	void init(){
+
+	void Init() {
 		sz = 1;
-		memset(ch, 0, sizeof(ch));
-		memset(val, 0, sizeof(val));
-		memset(f, 0, sizeof(f));
+		memset(ch[0], 0, sizeof(ch[0]));
+		memset(fail, 0, sizeof(fail));
+		memset(val, false, sizeof(val));
 	}
-	int idx(char c){ return c - '0'; }
-
-	int insert(char *s){
+	int new_node() {
+		memset(ch[sz], 0, sizeof(ch[sz]));
+		return sz++;
+	}
+	int Index(char ch) {
+		return ch - '0';
+	}
+	int Insert(char *pattern) {
 		int u = 0;
-		for (int i = 0; s[i]; i++){
-			int c = idx(s[i]);
-			if (!ch[u][c])
-				ch[u][c] = sz++;
-
+		for (int i = 0; pattern[i]; ++i) {
+			int c = Index(pattern[i]);
+			if (!ch[u][c]) {
+				ch[u][c] = new_node();
+			}
 			u = ch[u][c];
 		}
-		val[u] = 1;
+		val[u] = true;
 		return u;
 	}
-	bool search(char *s){
+	bool Search(char *pattern) {
 		int u = 0;
-		for (int i = 0; s[i]; i++){
-			int c = idx(s[i]);
-			if (!ch[u][c]) return 0;
+		for (int i = 0; pattern[i]; ++i) {
+			int c = Index(pattern[i]);
+			if (!ch[u][c]) {
+				return 0;
+			}
 			u = ch[u][c];
 		}
 		return val[u];
 	}
-	void getFail(){
-		queue<int> q;
-		for (int i = 0; i<sigma_size; i++)
-			if (ch[0][i]) q.push(ch[0][i]);
-
-		while (!q.empty()){
-			int r = q.front(); q.pop();
-			for (int c = 0; c<sigma_size; c++){
-				int u = ch[r][c];
-				if (!u)continue;
-				q.push(u);
-				int v = f[r];
-				while (v && ch[v][c] == 0) v = f[v]; //沿失配边走上去 如果失配后有节点 且 其子节点c存在则结束循环     
-				f[u] = ch[v][c];
+	void GetFail() {
+		queue<int> que;
+		for (int i = 0; i < CharSet; ++i) {
+			if (ch[0][i]) {
+				que.push(ch[0][i]);
+			}
+		}
+		while (!que.empty()) {
+			int u = que.front();
+			que.pop();
+			for (int c = 0; c < CharSet; ++c) {
+				int v = ch[u][c];
+				if (!v) continue;
+				que.push(v);
+				int ptr = fail[u];
+				while (ptr && ch[ptr][c] == 0) {
+					ptr = fail[ptr];
+				}
+				fail[v] = ch[ptr][c];
 			}
 		}
 	}
-	int find(char *T){
-		int j = 0, ans = 0;
-		for (int i = 0; T[i]; i++){
-			int c = idx(T[i]);
-			while (j && ch[j][c] == 0) j = f[j];
-			j = ch[j][c];
-
-			int temp = j;
-			while (temp){ //沿失配边走 || 若沿失配边走时一定要节点为单词结尾则改成while(temp && val[temp])
-				ans += val[temp];
-				temp = f[temp];
+	int Find(char *text) {
+		int u = 0, ret = 0;
+		for (int i = 0; text[i]; ++i) {
+			int c = Index(text[i]);
+			while (u && !ch[u][c]) {
+				u = fail[u];
+			}
+			u = ch[u][c];
+			int ptr = u;
+			while (ptr) {
+				ret += (int) val[ptr];
+				ptr = fail[ptr];
 			}
 		}
-		return ans;
+		return ret;
 	}
 };
-Trie ac, buf;
 
-void dfs(int u, int v){
-	for (int i = 0; i < 2; i++){
-		if (buf.ch[v][i])
-		{
-			int e2 = buf.ch[v][i];
-			if (!ac.ch[u][i])
-			{
-				memset(ac.ch[ac.sz], 0, sizeof(ac.ch[ac.sz]));
-				ac.ch[u][i] = ac.sz++;
+AC_Automaton box, buf;
+char str[MAXN], text[MAXN];
+
+void Init() {
+	box.Init();
+	buf.Init();
+}
+void Shift(int len, int L) {
+	text[0] = str[0];
+	L %= len;
+	for (int i = 0; i < len; ++i) {
+		text[i + 1] = str[(i + L) % len + 1];
+	}
+	text[len + 1] = '\0';
+}
+void dfs(int u, int v) {
+	for (int i = 0; i < CharSet; ++i) {
+		if (buf.ch[v][i]) {
+			int p2 = buf.ch[v][i];
+			if (!box.ch[u][i]) {
+				box.ch[u][i] = box.new_node();
 			}
-			int e1 = ac.ch[u][i];
-			ac.val[e1] |= buf.val[e2];
-			dfs(e1, e2);
+			int p1 = box.ch[u][i];
+			box.val[p1] |= buf.val[p2];
+			dfs(p1, p2);
 		}
 	}
 }
-
-void join(){
+void Merge() {
 	dfs(0, 0);
-	buf.init();
-	ac.getFail();
+	buf.Init();
+	box.GetFail();
 }
-char s[6000000], temp[6000000];
-int main(){
-	int Cas = 1, T, n; scanf("%d", &T);
-	while (T--){
-		scanf("%d", &n);
-		printf("Case #%d:\n", Cas++);
-		ac.init();
-		buf.init();
-		int L = 0;
-		while (n--){
-			scanf("%s", temp);
-			int len = strlen(temp + 1);
-			s[0] = temp[0];
-			for (int i = 0; i < len; i++)
-				s[i + 1] = temp[1 + (i + L%len + len) % len];
-			s[len + 1] = '\0';
-			if (s[0] == '+'){
-				if (buf.search(s + 1) || ac.search(s + 1))continue;//若单词已存在
-				buf.insert(s + 1);
-				buf.getFail();
-				if (buf.sz > 2000) join();
+void Gao(int n) {
+	int L = 0;
+	while (n--) {
+		scanf("%s", str);
+		int len = strlen(str + 1);
+		Shift(len, L);
+		if (text[0] == '+') {
+			if (box.Search(text + 1) || buf.Search(text + 1)) continue;
+			buf.Insert(text + 1);
+			buf.GetFail();
+			if (buf.sz > Limit) {
+				Merge();
 			}
-			else
-			{
-				L = buf.find(s + 1) + ac.find(s + 1);
-				printf("%d\n", L);
-			}
+		} else {
+			L = box.Find(text + 1) + buf.Find(text + 1);
+			printf("%d\n", L);
 		}
+	}
+}
+int main() {
+#ifdef _Rayn
+	freopen("in.txt", "r", stdin);
+#endif
+	int T, cases = 0;
+	scanf("%d", &T);
+	while (T--) {
+		int n;
+		scanf("%d", &n);
+		printf("Case #%d:\n", ++cases);
+		Init();
+		Gao(n);
 	}
 	return 0;
 }
-/*
-/*
-99
-10
-+01
-+110
-?010
-+110
-+00
-+0
-?001001
-?001001
-+110110
-?1101001101
-
-6
-+01
-+110
-+110
-+00
-+0
-?001001
-
-20
-+101001011
-?110100
-+11010100
-?0011001101
-+111011
-?00010011
-+0111010110
-+0000101
-+0
-+11000
-?1
-+1010101
-+0001
-+0110
-+0111101111
-?1100
-+0111
-+1001
-?0110111011
-?1010010100
-
-10
-+00
-?010110100
-+0100000100
-+111
-+000000
-?0000110
-+110
-+00
-+0011
-?101001
-
-99
-+0
-+1000100
-+01
-+0
-?1110010011
-
-ans:
-case 1
-1
-7
-7
-11
-
-case 2
-8
-*/
