@@ -16,6 +16,7 @@ typedef long long Long;
 typedef pair<int, int> pii;
 
 const int MAXN = 100005;
+
 int LowBit(int x) {
     return x & (-x);
 }
