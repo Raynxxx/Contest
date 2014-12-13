@@ -1,5 +1,5 @@
 /*
-** UVA 108 Maximum Sum (1st)
+** UVA 108 Maximum Sum
 ** Created by Rayn on 2014/12/13
 */
 #include <cmath>
