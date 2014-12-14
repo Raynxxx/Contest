@@ -12,11 +12,11 @@ public class Main {
 	
 	public static void Init() {
 		top[1] = BigInteger.valueOf(1);
-        bot[1] = BigInteger.valueOf(2);
-        for(int i = 2; i <= 500; ++i) {
-        	top[i] = top[i - 1].multiply(BigInteger.valueOf(2 * i - 1));
-        	bot[i] = bot[i - 1].multiply(BigInteger.valueOf(2)).multiply(BigInteger.valueOf(i));
-        }
+	        bot[1] = BigInteger.valueOf(2);
+	        for(int i = 2; i <= 500; ++i) {
+	        	top[i] = top[i - 1].multiply(BigInteger.valueOf(2 * i - 1));
+	        	bot[i] = bot[i - 1].multiply(BigInteger.valueOf(2)).multiply(BigInteger.valueOf(i));
+	        }
 	}
     public static void main(String[] args) {
         Init();
